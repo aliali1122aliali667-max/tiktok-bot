@@ -22,6 +22,14 @@ import {
   handleMyEmail,
   startCleanupTimer,
 } from './email.js';
+import {
+  handleNumberMenu,
+  handleNumberForCountry,
+  handleCheck,
+  handleMyNumber,
+  handleClearNumber,
+  startSmsCleanupTimer,
+} from './sms.js';
 
 const bot = new Telegraf(config.botToken);
 
@@ -192,6 +200,17 @@ bot.command('read', handleRead);
 bot.command('refresh', handleRefresh);
 bot.command('delete', handleDelete);
 bot.command('myemail', handleMyEmail);
+
+// ============================================================
+// أوامر الأرقام الوهمية
+// ============================================================
+bot.command('number', handleNumberMenu);
+bot.command('numberus', handleNumberForCountry('us'));
+bot.command('numberuk', handleNumberForCountry('uk'));
+bot.command('numbersa', handleNumberForCountry('sa'));
+bot.command('check', handleCheck);
+bot.command('mynumber', handleMyNumber);
+bot.command('clearnumber', handleClearNumber);
 
 async function handleAI(ctx, prompt) {
   if (!isAIConfigured) {
@@ -439,6 +458,7 @@ process.on('SIGTERM', () => shutdown('SIGTERM'));
 
 async function main() {
   startCleanupTimer();
+  startSmsCleanupTimer();
 
   server.listen(config.server.port, () => {
     log(`Health server listening on port ${config.server.port}`);

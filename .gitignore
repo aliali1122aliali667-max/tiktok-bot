@@ -3,5 +3,6 @@ npm-debug.log*
 yarn-error.log*
 tmp/
 temp/
+data/
 *.log
 .DS_Store
