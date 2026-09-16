@@ -30,6 +30,23 @@ import {
   handleClearNumber,
   startSmsCleanupTimer,
 } from './sms.js';
+import {
+  saveStats,
+  startStatsTimer,
+  trackCommand,
+  trackEmail,
+  trackMessage,
+  trackUser,
+  trackVideo,
+} from './stats.js';
+import {
+  adminOnly,
+  handleActive,
+  handleStats,
+  handleTop,
+  handleUser,
+  handleUsers,
+} from './admin.js';
 
 const bot = new Telegraf(config.botToken);
 
@@ -131,6 +148,19 @@ const WELCOME = [
   '/reset - حذف ذاكرة المحادثة',
 ].join('\n');
 
+// ============================================================
+// تتبع الأوامر: يسجّل المستخدم ويزيد عدّاد الأمر لكل أمر يُستخدم
+// ============================================================
+bot.use((ctx, next) => {
+  const text = ctx.message?.text;
+  if (typeof text === 'string' && text.startsWith('/')) {
+    trackUser(ctx);
+    const commandName = text.split(/\s+/)[0].slice(1).replace(/@.*$/, '');
+    trackCommand(ctx.from?.id, commandName);
+  }
+  return next();
+});
+
 bot.start((ctx) => ctx.reply(`أهلاً ${getUserName(ctx)}!\n\n${WELCOME}`));
 
 bot.help((ctx) =>
@@ -194,7 +224,11 @@ bot.command('filter', async (ctx) => {
 
 bot.command('image', (ctx) => ctx.reply(imageHelpText(getUserName(ctx))));
 
-bot.command('email', handleEmail);
+bot.command('email', async (ctx) => {
+  const result = await handleEmail(ctx);
+  trackEmail(ctx.from?.id);
+  return result;
+});
 bot.command('inbox', handleInbox);
 bot.command('read', handleRead);
 bot.command('refresh', handleRefresh);
@@ -211,6 +245,15 @@ bot.command('numbersa', handleNumberForCountry('sa'));
 bot.command('check', handleCheck);
 bot.command('mynumber', handleMyNumber);
 bot.command('clearnumber', handleClearNumber);
+
+// ============================================================
+// أوامر الإحصائيات (للمشرفين فقط - ADMIN_IDS في .env)
+// ============================================================
+bot.command('stats', adminOnly, handleStats);
+bot.command('users', adminOnly, handleUsers);
+bot.command('user', adminOnly, handleUser);
+bot.command('active', adminOnly, handleActive);
+bot.command('top', adminOnly, handleTop);
 
 async function handleAI(ctx, prompt) {
   if (!isAIConfigured) {
@@ -260,6 +303,7 @@ async function handleTikTok(ctx, url) {
         reply_parameters: { message_id: ctx.message.message_id },
       }
     );
+    trackVideo(ctx.from?.id);
     await clearStatus(ctx, statusMessage);
   } catch (error) {
     log(`Download error: ${error.message}`);
@@ -404,6 +448,9 @@ bot.on('text', async (ctx) => {
   const text = (ctx.message.text ?? '').trim();
   if (!text) return;
 
+  trackUser(ctx);
+  trackMessage(ctx.from?.id);
+
   const tiktokUrl = extractTikTokUrl(text);
   if (tiktokUrl) {
     return handleTikTok(ctx, tiktokUrl);
@@ -448,6 +495,7 @@ async function shutdown(signal) {
   if (shuttingDown) return;
   shuttingDown = true;
   log(`Received ${signal}, shutting down`);
+  saveStats();
   await bot.stop(signal).catch(() => {});
   server.close(() => process.exit(0));
   setTimeout(() => process.exit(0), 5000).unref();
@@ -459,6 +507,7 @@ process.on('SIGTERM', () => shutdown('SIGTERM'));
 async function main() {
   startCleanupTimer();
   startSmsCleanupTimer();
+  startStatsTimer();
 
   server.listen(config.server.port, () => {
     log(`Health server listening on port ${config.server.port}`);
