@@ -13,6 +13,15 @@ import {
   toDataUrl,
 } from './image.js';
 import { canGenerateImages, editImageWithGemini } from './image-ai.js';
+import {
+  handleEmail,
+  handleInbox,
+  handleRead,
+  handleRefresh,
+  handleDelete,
+  handleMyEmail,
+  startCleanupTimer,
+} from './email.js';
 
 const bot = new Telegraf(config.botToken);
 
@@ -176,6 +185,13 @@ bot.command('filter', async (ctx) => {
 });
 
 bot.command('image', (ctx) => ctx.reply(imageHelpText(getUserName(ctx))));
+
+bot.command('email', handleEmail);
+bot.command('inbox', handleInbox);
+bot.command('read', handleRead);
+bot.command('refresh', handleRefresh);
+bot.command('delete', handleDelete);
+bot.command('myemail', handleMyEmail);
 
 async function handleAI(ctx, prompt) {
   if (!isAIConfigured) {
@@ -422,6 +438,8 @@ process.on('SIGINT', () => shutdown('SIGINT'));
 process.on('SIGTERM', () => shutdown('SIGTERM'));
 
 async function main() {
+  startCleanupTimer();
+
   server.listen(config.server.port, () => {
     log(`Health server listening on port ${config.server.port}`);
   });
