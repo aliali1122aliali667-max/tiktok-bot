@@ -152,4 +152,4 @@ export async function cleanupTempDir() {
   } catch {
     // ignore cleanup errors
   }
-    }
+}

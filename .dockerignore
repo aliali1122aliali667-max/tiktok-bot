@@ -1,0 +1,11 @@
+node_modules
+npm-debug.log
+.env
+.env.*
+!.env.example
+tmp
+.git
+.gitignore
+main.py
+requirements.txt
+ai.js

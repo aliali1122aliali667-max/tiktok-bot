@@ -54,24 +54,28 @@ function buildSystemPrompt(userName) {
   ].join('\n');
 }
 
-export async function askAI(chatId, prompt, userName = '') {
+async function requestCompletion(requestMessages, userName, model = config.ai.model) {
   const openai = getClient();
+  const completion = await openai.chat.completions.create({
+    model,
+    max_tokens: config.ai.maxTokens,
+    messages: [{ role: 'system', content: buildSystemPrompt(userName) }, ...requestMessages],
+  });
+
+  const answer = completion?.choices?.[0]?.message?.content?.trim();
+  if (!answer) {
+    throw new Error('Empty response from the AI provider');
+  }
+  return answer;
+}
+
+export async function askAI(chatId, prompt, userName = '') {
   const messages = getHistory(chatId);
   messages.push({ role: 'user', content: prompt });
   trimHistory(messages);
 
   try {
-    const completion = await openai.chat.completions.create({
-      model: config.ai.model,
-      max_tokens: config.ai.maxTokens,
-      messages: [{ role: 'system', content: buildSystemPrompt(userName) }, ...messages],
-    });
-
-    const answer = completion?.choices?.[0]?.message?.content?.trim();
-    if (!answer) {
-      throw new Error('Empty response from the AI provider');
-    }
-
+    const answer = await requestCompletion(messages, userName);
     messages.push({ role: 'assistant', content: answer });
     trimHistory(messages);
     return answer;
@@ -79,4 +83,27 @@ export async function askAI(chatId, prompt, userName = '') {
     messages.pop();
     throw error;
   }
-  }
+}
+
+export async function askAIWithImage(chatId, prompt, imageDataUrl, userName = '') {
+  const messages = getHistory(chatId);
+  const question = (prompt || '').trim() || 'حلل هذه الصورة وصفها لي باختصار.';
+
+  const request = [
+    ...messages,
+    {
+      role: 'user',
+      content: [
+        { type: 'text', text: question },
+        { type: 'image_url', image_url: { url: imageDataUrl } },
+      ],
+    },
+  ];
+
+  const answer = await requestCompletion(request, userName, config.ai.visionModel);
+
+  messages.push({ role: 'user', content: `[صورة] ${question}` });
+  messages.push({ role: 'assistant', content: answer });
+  trimHistory(messages);
+  return answer;
+}

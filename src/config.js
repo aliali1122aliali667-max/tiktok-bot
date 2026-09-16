@@ -28,7 +28,8 @@ export const config = {
       'USER_LLM_BASE_URL',
       'https://generativelanguage.googleapis.com/v1beta/openai/'
     ),
-    model: optional('USER_LLM_MODEL', 'gemini-3.5-flash-lite'),
+    model: optional('USER_LLM_MODEL', 'gemini-2.0-flash'),
+    visionModel: optional('USER_LLM_VISION_MODEL', optional('USER_LLM_MODEL', 'gemini-2.0-flash')),
     systemPrompt: optional(
       'USER_LLM_SYSTEM_PROMPT',
       'أنت مساعد ذكي في بوت تيليجرام. جاوب بنفس لغة المستخدم، وخلّي الردود واضحة ومختصرة.'
@@ -42,6 +43,12 @@ export const config = {
     timeoutMs: toInt('DOWNLOAD_TIMEOUT_MS', 120000),
     tempDir: optional('TEMP_DIR', 'tmp'),
     ytDlpBinary: optional('YTDLP_BINARY', 'yt-dlp'),
+  },
+
+  image: {
+    maxSizeMb: toInt('IMAGE_MAX_SIZE_MB', 20),
+    tempDir: optional('IMAGE_TEMP_DIR', 'tmp'),
+    editModel: optional('USER_LLM_IMAGE_MODEL', 'gemini-2.5-flash-image'),
   },
 
   server: {
