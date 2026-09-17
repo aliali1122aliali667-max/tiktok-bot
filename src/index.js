@@ -47,7 +47,7 @@ import {
   handleUser,
   handleUsers,
 } from './admin.js';
-
+import { getMainKeyboard } from './keyboard.js';
 const bot = new Telegraf(config.botToken);
 
 function log(message) {
@@ -161,7 +161,9 @@ bot.use((ctx, next) => {
   return next();
 });
 
-bot.start((ctx) => ctx.reply(`أهلاً ${getUserName(ctx)}!\n\n${WELCOME}`));
+bot.sbot.start((ctx) =>
+  ctx.reply(`أهلاً ${getUserName(ctx)}!\n\n${WELCOME}`, { ...getMainKeyboard() })
+);
 
 bot.help((ctx) =>
   ctx.reply(
@@ -469,6 +471,31 @@ bot.on('text', async (ctx) => {
   return handleAI(ctx, text);
 });
 
+bot.hears('📥 تحميل فيديو', (ctx) =>
+  ctx.reply(`${getUserName(ctx)}، أرسل رابط فيديو تيك توك الآن.`)
+);
+
+bot.hears('📧 إيميل مؤقت', async (ctx) => {
+  const result = await handleEmail(ctx);
+  trackEmail(ctx.from?.id);
+  return result;
+});
+
+bot.hears('📱 رقم وهمي', (ctx) => handleNumberMenu(ctx));
+
+bot.hears('🧠 اسأل الذكاء', (ctx) =>
+  ctx.reply(`${getUserName(ctx)}، اكتب سؤالك الآن.`)
+);
+
+bot.hears('🎨 اسم مزخرف', (ctx) =>
+  ctx.reply(`${getUserName(ctx)}، اكتب:\n/name محمد`)
+);
+
+bot.hears('🖼️ فلتر صور', (ctx) =>
+  ctx.reply(`${getUserName(ctx)}، أرسل صورة مع:\n/filter rainbow`)
+);
+
+bot.hears('ℹ️ المساعدة', (ctx) => ctx.reply('اكتب /help'));
 bot.catch((error, ctx) => {
   log(`Unhandled error for update ${ctx.update.update_id}: ${error.message}`);
 });
