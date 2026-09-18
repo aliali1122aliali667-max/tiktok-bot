@@ -161,8 +161,10 @@ bot.use((ctx, next) => {
   return next();
 });
 
-bot.sbot.start((ctx) =>
+bot.start((ctx) =>
   ctx.reply(`أهلاً ${getUserName(ctx)}!\n\n${WELCOME}`, { ...getMainKeyboard() })
+);
+
 );
 
 bot.help((ctx) =>
