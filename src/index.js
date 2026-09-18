@@ -165,7 +165,7 @@ bot.start((ctx) =>
   ctx.reply(`أهلاً ${getUserName(ctx)}!\n\n${WELCOME}`, { ...getMainKeyboard() })
 );
 
-);
+
 
 bot.help((ctx) =>
   ctx.reply(
